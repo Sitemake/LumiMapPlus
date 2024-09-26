@@ -42,6 +42,7 @@
             z-index: 1000;
         }
 
+        /* Центрирование заголовка "LumiMap Plus" */
         #title {
             position: absolute;
             top: 10px;
@@ -83,13 +84,26 @@
 </head>
 <body>
 
-<div id="title">LumiMap Plus</div>
+<div id="title">LumiMap Plus</div> <!-- Добавлен заголовок -->
 <div id="message">Поставь приближение 80%</div>
 <div id="controls">
     <label for="colorPicker">Выбери цвет:</label>
     <input type="color" id="colorPicker" value="#ff0000">
     <button id="eraseButton">Стереть рисунок</button>
     <button id="clearAllButton">Стереть изображения и текст</button>
+    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+    <button id="addImageButton">Добавить изображение</button>
+    <button id="addTextButton">Добавить текст</button>
+    <div>
+        <label for="xCoord">X:</label>
+        <input type="number" id="xCoord" value="50">
+        <label for="yCoord">Y:</label>
+        <input type="number" id="yCoord" value="50">
+        <label for="width">Ширина:</label>
+        <input type="number" id="width" value="100" min="1">
+        <label for="height">Высота:</label>
+        <input type="number" id="height" value="100" min="1">
+    </div>
 </div>
 <div id="map"></div>
 <canvas id="drawingCanvas"></canvas>
@@ -98,13 +112,25 @@
     const mapElement = document.getElementById('map');
     const canvas = document.getElementById('drawingCanvas');
     const ctx = canvas.getContext('2d');
+    const colorPicker = document.getElementById('colorPicker');
+    const eraseButton = document.getElementById('eraseButton');
+    const clearAllButton = document.getElementById('clearAllButton');
+    const addImageButton = document.getElementById('addImageButton');
+    const addTextButton = document.getElementById('addTextButton');
+    const imageInput = document.getElementById('imageInput');
+    const xCoordInput = document.getElementById('xCoord');
+    const yCoordInput = document.getElementById('yCoord');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    let drawing = false;
+    let currentColor = colorPicker.value;
+
     canvas.width = 3 * 512;
     canvas.height = 3 * 512;
 
     function generateTileUrl(x, y) {
-        return `http://map.lumika.space:8080/tiles/world/1/vintage_story/${x}_${y}.png`;
+        return http://map.lumika.space:8080/tiles/world/1/vintage_story/${x}_${y}.png;
     }
-
     function generateManualTileUrl(x, y) {
         return `manual/${x}_${y}.png`; // Путь к локальной папке "manual"
     }
@@ -136,6 +162,83 @@
 
     displayMap(minX, maxX, minY, maxY);
 
+    function startDrawing(e) {
+        drawing = true;
+        draw(e);
+    }
+
+    function draw(e) {
+        if (!drawing) return;
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = currentColor;
+
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function stopDrawing() {
+        drawing = false;
+        ctx.beginPath();
+    }
+
+    colorPicker.addEventListener('input', (e) => {
+        currentColor = e.target.value;
+    });
+
+    eraseButton.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    clearAllButton.addEventListener('click', () => {
+        const addedElements = document.querySelectorAll('.addedElement');
+        addedElements.forEach(element => element.remove());
+    });
+
+    addImageButton.addEventListener('click', () => {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const imgElement = document.createElement('img');
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imgElement.src = event.target.result;
+                imgElement.className = 'addedElement';
+                imgElement.style.left = ${xCoordInput.value}px;
+                imgElement.style.top = ${yCoordInput.value}px;
+                imgElement.style.width = ${widthInput.value}px;
+                imgElement.style.height = ${heightInput.value}px;
+                mapElement.appendChild(imgElement);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    addTextButton.addEventListener('click', () => {
+        const text = prompt('Введите текст:');
+        if (text) {
+            const textElement = document.createElement('div');
+            textElement.className = 'addedElement';
+            textElement.style.left = ${xCoordInput.value}px;
+            textElement.style.top = ${yCoordInput.value}px;
+            textElement.style.width = ${widthInput.value}px;
+            textElement.style.height = ${heightInput.value}px;
+            textElement.innerText = text;
+            textElement.style.fontSize = '16px';
+            textElement.style.color = currentColor;
+            mapElement.appendChild(textElement);
+        }
+    });
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
 </script>
 
 </body>
