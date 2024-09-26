@@ -209,10 +209,10 @@
             reader.onload = function(event) {
                 imgElement.src = event.target.result;
                 imgElement.className = 'addedElement';
-                imgElement.style.left = ${xCoordInput.value}px;
-                imgElement.style.top = ${yCoordInput.value}px;
-                imgElement.style.width = ${widthInput.value}px;
-                imgElement.style.height = ${heightInput.value}px;
+                imgElement.style.left = `${xCoordInput.value}px`;
+                imgElement.style.top = `${yCoordInput.value}px`;
+                imgElement.style.width = `${widthInput.value}px`;
+                imgElement.style.height = `${heightInput.value}px`;
                 mapElement.appendChild(imgElement);
             };
             reader.readAsDataURL(file);
