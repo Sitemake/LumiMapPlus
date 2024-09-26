@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LumiMap Plus</title>
+    <link rel="icon" type="image/png" href="Lumika.png">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #map {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 512px);
+            grid-template-rows: repeat(auto-fill, 512px);
+            overflow: auto;
+            position: relative;
+            pointer-events: none;
+        }
+
+        .tile {
+            width: 512px;
+            height: 512px;
+            object-fit: contain;
+            border: none;
+            pointer-events: none;
+        }
+
+        #message {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: #000;
+            z-index: 1000;
+        }
+
+        /* Центрирование заголовка "LumiMap Plus" */
+        #title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: #000;
+            z-index: 1000;
+            font-weight: bold;
+        }
+
+        #controls {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: auto;
+        }
+
+        .addedElement {
+            position: absolute;
+            pointer-events: auto;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="title">LumiMap Plus</div> <!-- Добавлен заголовок -->
+<div id="message">Поставь приближение 80%</div>
+<div id="controls">
+    <label for="colorPicker">Выбери цвет:</label>
+    <input type="color" id="colorPicker" value="#ff0000">
+    <button id="eraseButton">Стереть рисунок</button>
+    <button id="clearAllButton">Стереть изображения и текст</button>
+    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+    <button id="addImageButton">Добавить изображение</button>
+    <button id="addTextButton">Добавить текст</button>
+    <div>
+        <label for="xCoord">X:</label>
+        <input type="number" id="xCoord" value="50">
+        <label for="yCoord">Y:</label>
+        <input type="number" id="yCoord" value="50">
+        <label for="width">Ширина:</label>
+        <input type="number" id="width" value="100" min="1">
+        <label for="height">Высота:</label>
+        <input type="number" id="height" value="100" min="1">
+    </div>
+</div>
+<div id="map"></div>
+<canvas id="drawingCanvas"></canvas>
+
+<script>
+    const mapElement = document.getElementById('map');
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    const colorPicker = document.getElementById('colorPicker');
+    const eraseButton = document.getElementById('eraseButton');
+    const clearAllButton = document.getElementById('clearAllButton');
+    const addImageButton = document.getElementById('addImageButton');
+    const addTextButton = document.getElementById('addTextButton');
+    const imageInput = document.getElementById('imageInput');
+    const xCoordInput = document.getElementById('xCoord');
+    const yCoordInput = document.getElementById('yCoord');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    let drawing = false;
+    let currentColor = colorPicker.value;
+
+    canvas.width = 3 * 512;
+    canvas.height = 3 * 512;
+
+    function generateTileUrl(x, y) {
+        return `http://map.lumika.space:8080/tiles/world/1/vintage_story/${x}_${y}.png`;
+    }
+
+    function displayMap(minX, maxX, minY, maxY) {
+        mapElement.innerHTML = '';
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const img = document.createElement('img');
+                img.src = generateTileUrl(x, y);
+                img.alt = `Tile ${x},${y}`;
+                img.classList.add('tile');
+
+                img.onerror = function() {
+                    img.src = 'placeholder.png';
+                };
+
+                mapElement.appendChild(img);
+            }
+        }
+    }
+
+    const minX = -1;
+    const maxX = 1;
+    const minY = -1;
+    const maxY = 1;
+
+    displayMap(minX, maxX, minY, maxY);
+
+    function startDrawing(e) {
+        drawing = true;
+        draw(e);
+    }
+
+    function draw(e) {
+        if (!drawing) return;
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = currentColor;
+
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function stopDrawing() {
+        drawing = false;
+        ctx.beginPath();
+    }
+
+    colorPicker.addEventListener('input', (e) => {
+        currentColor = e.target.value;
+    });
+
+    eraseButton.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    clearAllButton.addEventListener('click', () => {
+        const addedElements = document.querySelectorAll('.addedElement');
+        addedElements.forEach(element => element.remove());
+    });
+
+    addImageButton.addEventListener('click', () => {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const imgElement = document.createElement('img');
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imgElement.src = event.target.result;
+                imgElement.className = 'addedElement';
+                imgElement.style.left = `${xCoordInput.value}px`;
+                imgElement.style.top = `${yCoordInput.value}px`;
+                imgElement.style.width = `${widthInput.value}px`;
+                imgElement.style.height = `${heightInput.value}px`;
+                mapElement.appendChild(imgElement);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    addTextButton.addEventListener('click', () => {
+        const text = prompt('Введите текст:');
+        if (text) {
+            const textElement = document.createElement('div');
+            textElement.className = 'addedElement';
+            textElement.style.left = `${xCoordInput.value}px`;
+            textElement.style.top = `${yCoordInput.value}px`;
+            textElement.style.width = `${widthInput.value}px`;
+            textElement.style.height = `${heightInput.value}px`;
+            textElement.innerText = text;
+            textElement.style.fontSize = '16px';
+            textElement.style.color = currentColor;
+            mapElement.appendChild(textElement);
+        }
+    });
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+</script>
+
+</body>
+</html>
