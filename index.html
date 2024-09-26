@@ -224,10 +224,10 @@
         if (text) {
             const textElement = document.createElement('div');
             textElement.className = 'addedElement';
-            textElement.style.left = ${xCoordInput.value}px;
-            textElement.style.top = ${yCoordInput.value}px;
-            textElement.style.width = ${widthInput.value}px;
-            textElement.style.height = ${heightInput.value}px;
+            imgElement.style.left = `${xCoordInput.value}px`;
+            imgElement.style.top = `${yCoordInput.value}px`;
+            imgElement.style.width = `${widthInput.value}px`;
+            imgElement.style.height = `${heightInput.value}px`;
             textElement.innerText = text;
             textElement.style.fontSize = '16px';
             textElement.style.color = currentColor;
