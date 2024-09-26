@@ -129,7 +129,7 @@
     canvas.height = 3 * 512;
 
     function generateTileUrl(x, y) {
-        return http://map.lumika.space:8080/tiles/world/1/vintage_story/${x}_${y}.png;
+        return `http://map.lumika.space:8080/tiles/world/1/vintage_story/${x}_${y}.png`;
     }
     function generateManualTileUrl(x, y) {
         return `manual/${x}_${y}.png`; // Путь к локальной папке "manual"
